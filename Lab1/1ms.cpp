@@ -19,23 +19,27 @@ void setSchedulingPolicy (int policy, int priority)
 
 void workload_1ms (void)
 {
-	int repeat = 100000; // tune this for the right amount of workload
+	int repeat = 625; // tune this for the right amount of workload
 	int x=0;
 	for (int i = 0; i <= repeat; i++)
 	{
 		// add some computation here (e.g., use sqrt() in cmath)
-		x = sqrt(i);
+		x = sqrt(2);
 	}
 }
 
 int main (void)
 {
 	setSchedulingPolicy (SCHED_FIFO, 99);
-	std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
-	workload_1ms ();
-	std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-	const int delta = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-	std::cout << delta << std::endl;
+	int delta=5;
+	while(delta!=1)
+	{
+		std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+		workload_1ms ();
+		std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
+		delta = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+	}
+		std::cout << delta << std::endl;
 
 	return 0;
 }
