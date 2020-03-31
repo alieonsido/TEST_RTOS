@@ -17,7 +17,7 @@ sig_atomic_t missing_times=0;
 
 void collectData (int param)
 {
-    float ratio = static_cast<int>(::missing_times) / static_cast<int>(::executed_times);
+    float ratio = static_cast<float>(::missing_times) / static_cast<float>(::executed_times);
     std::cout << "Data missing times:" << ::missing_times << std::endl;
     std::cout << "Data executed times:" << ::executed_times << std::endl;
     std::cout << "Data ratio:" << ratio << std::endl;
