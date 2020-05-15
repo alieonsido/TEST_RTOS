@@ -1,0 +1,11 @@
+- ![](https://i.imgur.com/X5mNcHQ.png)
+- ![](https://i.imgur.com/1zVllpK.png)
+
+兩張圖分別為只設置 governer 以及 static freq 的結果，
+圖一中，左手邊為 powersave, 右手邊為 performance.
+圖二中，左為1000MHZ, 右為2000MHZ，
+測試環境的 cpu 為 I7-9750H ，單核最高頻率可到 4.5GHZ 
+
+由此可知，若是在頻率過低的狀況下， Worse case (圖中的變數命名為 workload) 的時間會被拉的非常長。
+但圖一和圖二可以比較出，縱使在平均頻率較低的 Powersave (但還是會不定時把頻率往上拉，但平均常態頻率為1MHZ), 表現上和固定頻率的 2000MHZ 差不多。
+故，完全固定的頻率反而會使整體效率下降。

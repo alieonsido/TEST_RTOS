@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <algorithm>
 #include <sched.h>
+#include <signal.h>
 
 using namespace std::chrono;
 using std::sort;
@@ -19,7 +20,8 @@ using std::sort;
 // void do_wrap_up(int, int);
 void pinCPU (int cpu_number);
 void setSchedulingPolicy (int newPolicy, int priority);
-void workload_1ms (void);
+static void workload_1ms (void);
+
 
 // define area
 
@@ -76,8 +78,8 @@ void *tau_process(void* tau_time)
         }
         else // delta bigger than period, so that process has a big response to pause process.
         {
-            printf("This task response time is %d, and corresponding worst case time is %d",period_time,workload_time); 
-            std::cout << "and the workload is" << delta << "ms\n" << std::endl;
+            printf("This task response time is %d ms, and corresponding worst case time is %d ms\n",(period_time/1000),workload_time); 
+            std::cout << "and the workload is " << delta << "ms\n" << std::endl;
             fflush(stdout);
             usleep (period_time-delta);
         }
@@ -118,7 +120,8 @@ int main(void)
   		if (pthread_create(&tau_threads[i], NULL, tau_process, (void *)&tau_time[i]) != 0)
         {
             fflush(stdout);
-  		    perror("pthread_create()"),exit(1);
+  		    perror("pthread_create()");
+            exit(1);
         }
         
 
@@ -128,7 +131,8 @@ int main(void)
   	{
 
     	if (pthread_join(tau_threads[i], NULL) != 0)
-    	perror("pthread_join()"),exit(1);
+    	perror("pthread_join()");
+        exit(1);
   	}
     return 0; 
 }
@@ -167,15 +171,13 @@ void do_wrap_up(int one_times, int another_times)
 }
 */
 
-void pinCPU (int cpu_number)
-{
+void pinCPU(int cpu_number) {
     cpu_set_t mask;
     CPU_ZERO(&mask);
 
     CPU_SET(cpu_number, &mask);
 
-    if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) == -1)
-    {
+    if(sched_setaffinity(0, sizeof(cpu_set_t), &mask) == -1) {
         perror("sched_setaffinity");
         exit(EXIT_FAILURE);
     }
@@ -206,3 +208,5 @@ void workload_1ms (void)
 		x = sqrt(2);
 	}
 }
+
+

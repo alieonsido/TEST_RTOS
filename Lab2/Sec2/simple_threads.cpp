@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include <cmath>
 #include <unistd.h>
+#include <iostream>
+#include <chrono>
+#include <signal.h>
 
 void *do_one_thing(void *);
 void *do_another_thing(void *);
@@ -22,10 +25,8 @@ int r1 = 0, r2 = 0;
 extern int main(void)
 {
   pinCPU(CPU_CORE);
-  for (int j = 0; j < WORKLOADTIME; j++)
-  {
-      workload_1ms ();
-  }
+
+
 
   pthread_t thread1, thread2;
   if (pthread_create(&thread1, NULL, do_one_thing, (void *) &r1) != 0)
@@ -48,6 +49,16 @@ extern int main(void)
 void *do_one_thing(void *pnum_times)
 {
   int i, j, x;
+
+  std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+  for (int j = 0; j < 50; j++)
+  {
+      workload_1ms();
+  }
+  std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
+  const int delta = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+  
+  printf("test workload: %d",delta); 
   for (i = 0;  i < 4; i++) {
     printf("doing one thing\n"); 
     for (j = 0; j < 10000; j++) x = x + i;
@@ -104,13 +115,22 @@ void setSchedulingPolicy (int newPolicy, int priority)
     }
 }
 
-void workload_1ms (void)
-{
-	int repeat = 625; // tune this for the right amount of workload
-	int x=0;
-	for (int i = 0; i <= repeat; i++)
-	{
-		// add some computation here (e.g., use sqrt() in cmath)
-		x = sqrt(2);
-	}
+// void workload_1ms (void)
+// {
+// 	int repeat = 625; // tune this for the right amount of workload
+// 	int x=0;
+// 	for (int i = 0; i <= repeat; i++)
+// 	{
+// 		// add some computation here (e.g., use sqrt() in cmath)
+// 		x = sqrt(2);
+// 	}
+// }
+
+
+void workload_1ms() {
+  int repeat = 130000;
+  float a[2] = {100, 0};
+  for(int i = 0;i <= repeat;++i) {
+    a[(i+1)&1] = sqrt(a[i&1]);
+  }
 }
