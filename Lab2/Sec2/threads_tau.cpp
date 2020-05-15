@@ -48,13 +48,14 @@ struct tau_parameter
     }/* data */
 };
 
-void *tau(void* tau_time)
+void *tau_process(void* tau_time)
 {
+    printf("testalive");
 	tau_parameter *tau_time_imag = (tau_parameter *) tau_time;
 	int workload_time = tau_time_imag -> exectime;
 	int period_time = tau_time_imag -> period;
 	int priority_num = tau_time_imag -> priority;
-	int delta = 0;
+	
 	printf("period: %d, wordload: %d, priority: %d\n" ,workload_time,period_time,priority_num);
     fflush(stdout);
     setSchedulingPolicy(SCHED_FIFO,priority_num);
@@ -66,7 +67,7 @@ void *tau(void* tau_time)
             workload_1ms();
         }
         std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-        delta = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        const int delta = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
         if (delta > period_time)
         {
             printf("Workload smaller and this task period time is %d, and corresponding worst case time is %d\n",period_time,workload_time); 
@@ -84,7 +85,7 @@ void *tau(void* tau_time)
 
 }
 
-void rate_monotonic(tau_parameter *priority_sort_array)
+static void rate_monotonic(tau_parameter *priority_sort_array)
 {
 	sort(priority_sort_array,priority_sort_array + TASK_NUMBER);
 	for (size_t i = 0; i < TASK_NUMBER; i++)
@@ -114,14 +115,12 @@ int main(void)
 
   	for (size_t i = 0; i < TASK_NUMBER; ++i)
   	{
-  		if (pthread_create(&tau_threads[i], NULL, tau, (void *)&tau_time[i]) != 0)
+  		if (pthread_create(&tau_threads[i], NULL, tau_process, (void *)&tau_time[i]) != 0)
         {
-            printf("Is your pthread OK???");
             fflush(stdout);
-  		    perror("pthread_create");
+  		    perror("pthread_create()"),exit(1);
         }
         
-        exit(1); 
 
   	}
   
@@ -129,8 +128,7 @@ int main(void)
   	{
 
     	if (pthread_join(tau_threads[i], NULL) != 0)
-    	perror("pthread_join");
-        exit(1);
+    	perror("pthread_join()"),exit(1);
   	}
     return 0; 
 }
