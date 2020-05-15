@@ -22,9 +22,9 @@ extern int main(void)
   int  status;
 
   /* initialize shared memory segment */
-  if ((shared_mem_id = shmget(IPC_PRIVATE, 2*sizeof(int), 0660)) == -1)
+  if ((shared_mem_id = shmget(IPC_PRIVATE, 2*sizeof(int), 0660)) == -1) // int shmget(key_t key, size_t size, int shmflg)
     perror("shmget"), exit(1);
-  if ((shared_mem_ptr = (int *)shmat(shared_mem_id, (void *)0, 0)) == (void *)-1)
+  if ((shared_mem_ptr = (int *)shmat(shared_mem_id, (void *)0, 0)) == (void *)-1) // void *shmat(int shmid, const void *shmaddr, int shmflg)
     perror("shmat failed"), exit(1);
 
   r1p = shared_mem_ptr;  

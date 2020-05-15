@@ -3,13 +3,14 @@
 	"tasks": [
 		{
 			"type": "shell",
-			"label": "shell: g++ build active file",
+			"label": "g++ build active file",
 			"command": "/usr/bin/g++",
 			"args": [
 				"-g",
 				"${file}",
 				"-o",
-				"${fileDirname}/${fileBasenameNoExtension}"
+				"${fileDirname}/${fileBasenameNoExtension}",
+				"-pthread"
 			],
 			"options": {
 				"cwd": "/usr/bin"
