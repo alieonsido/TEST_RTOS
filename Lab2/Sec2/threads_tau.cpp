@@ -8,8 +8,9 @@
 #include <cmath>
 #include <unistd.h>
 #include <algorithm>
+#include <sched.h>
 
-using namespace std;
+using namespace std::chrono;
 using std::sort;
 
 // declare area
@@ -23,7 +24,7 @@ void workload_1ms (void);
 // define area
 
 #define CPU_CORE 0
-#define DEFAULT_PRIORITY 99
+#define DEFAULT_PRIORITY 0
 #define TASK_NUMBER 3
 
 #define WORKLOADTIME_TAU1 1
@@ -35,13 +36,12 @@ void workload_1ms (void);
 #define WORKLOADTIME_TAU3 10
 #define PERIODTIME_TAU3 5000
 
-
 int r1 = 0, r2 = 0;
 int task_number = TASK_NUMBER;
 
 struct tau_parameter
 {
-    int period, exectime, priority;
+    int exectime, period, priority;
     bool operator < (const tau_parameter &rhs) 
     {
         return period < rhs.period;
@@ -55,9 +55,11 @@ void *tau(void* tau_time)
 	int period_time = tau_time_imag -> period;
 	int priority_num = tau_time_imag -> priority;
 	int delta = 0;
-	printf("period: %d, wordload: %d, priority: %d" ,workload_time,period_time,priority_num);
+	printf("period: %d, wordload: %d, priority: %d\n" ,workload_time,period_time,priority_num);
+    fflush(stdout);
+    setSchedulingPolicy(SCHED_FIFO,priority_num);
     while (1)
-    {
+    {   
         std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
         for (int j = 0; j < workload_time; j++)
         {
@@ -67,15 +69,19 @@ void *tau(void* tau_time)
         delta = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
         if (delta > period_time)
         {
-
+            printf("Workload smaller and this task period time is %d, and corresponding worst case time is %d\n",period_time,workload_time); 
+            fflush(stdout);
             continue;
         }
-        else
+        else // delta bigger than period, so that process has a big response to pause process.
         {
+            printf("This task response time is %d, and corresponding worst case time is %d",period_time,workload_time); 
+            std::cout << "and the workload is" << delta << "ms\n" << std::endl;
+            fflush(stdout);
             usleep (period_time-delta);
         }
     }
-    return 0;
+
 }
 
 void rate_monotonic(tau_parameter *priority_sort_array)
@@ -87,13 +93,15 @@ void rate_monotonic(tau_parameter *priority_sort_array)
 	}
 }
 
-extern int main(void)
+
+int main(void)
 {
     pinCPU(CPU_CORE);
-    pthread_t tau_threads[3];
+    constexpr int tasknumber = TASK_NUMBER;
+    pthread_t tau_threads[tasknumber];
 	
     //tau parameter declaration
-    tau_parameter tau_time[TASK_NUMBER]=
+    tau_parameter tau_time[tasknumber]=
     {
         {WORKLOADTIME_TAU1,PERIODTIME_TAU1,DEFAULT_PRIORITY},
         {WORKLOADTIME_TAU2,PERIODTIME_TAU2,DEFAULT_PRIORITY},
@@ -102,17 +110,27 @@ extern int main(void)
 
 	//tau prioriry sort by rate_Monotonic 
 	rate_monotonic(tau_time);
+    printf("now tau_time last is %d",tau_time[2].priority);
 
-  	for (size_t i = 0; i < TASK_NUMBER; i++)
+  	for (size_t i = 0; i < TASK_NUMBER; ++i)
   	{
   		if (pthread_create(&tau_threads[i], NULL, tau, (void *)&tau_time[i]) != 0)
-  		perror("pthread_create"), exit(1); 
+        {
+            printf("Is your pthread OK???");
+            fflush(stdout);
+  		    perror("pthread_create");
+        }
+        
+        exit(1); 
+
   	}
   
-  	for (size_t i = 0; i < TASK_NUMBER; i++)
+  	for (size_t i = 0; i < TASK_NUMBER; ++i)
   	{
+
     	if (pthread_join(tau_threads[i], NULL) != 0)
-    	perror("pthread_join"),exit(1);
+    	perror("pthread_join");
+        exit(1);
   	}
     return 0; 
 }

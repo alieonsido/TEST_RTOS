@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <pthread.h>
+#include <cmath>
+#include <unistd.h>
 
 void *do_one_thing(void *);
 void *do_another_thing(void *);
