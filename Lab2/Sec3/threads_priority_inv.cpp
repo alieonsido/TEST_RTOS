@@ -26,21 +26,30 @@ static void workload_1ms (void);
 // define area
 
 #define CPU_CORE 0
-#define DEFAULT_PRIORITY 0
-#define TASK_NUMBER 3
+#define DEFAULT_PRIORITY 99
 
+// extend area,workload unit is ms (time).
+// and Period unit is us (because endtime / starttime is us.) 
+#define TASK_NUMBER 8
 #define WORKLOADTIME_TAU1 1
 #define PERIODTIME_TAU1 50000
-
 #define WORKLOADTIME_TAU2 50
 #define PERIODTIME_TAU2 10000
-
 #define WORKLOADTIME_TAU3 10
 #define PERIODTIME_TAU3 5000
+#define WORKLOADTIME_TAU4 6
+#define PERIODTIME_TAU4 3000
+#define WORKLOADTIME_TAU5 7
+#define PERIODTIME_TAU5 4000
+#define WORKLOADTIME_TAU6 8
+#define PERIODTIME_TAU6 1750
+#define WORKLOADTIME_TAU7 9
+#define PERIODTIME_TAU7 6750
+#define WORKLOADTIME_TAU8 10
+#define PERIODTIME_TAU8 5000
+
 
 int r1 = 0, r2 = 0;
-int task_number = TASK_NUMBER;
-
 struct tau_parameter
 {
     int exectime, period, priority;
@@ -58,7 +67,7 @@ void *tau_process(void* tau_time)
 	int period_time = tau_time_imag -> period;
 	int priority_num = tau_time_imag -> priority;
 	
-	printf("period: %d, wordload: %d, priority: %d\n" ,workload_time,period_time,priority_num);
+	printf("workload: %d, period: %d, priority: %d\n" ,workload_time,period_time,priority_num);
     fflush(stdout);
     setSchedulingPolicy(SCHED_FIFO,priority_num);
     while (1)
@@ -90,25 +99,70 @@ void *tau_process(void* tau_time)
 static void rate_monotonic(tau_parameter *priority_sort_array)
 {
 	sort(priority_sort_array,priority_sort_array + TASK_NUMBER);
-	for (size_t i = 0; i < TASK_NUMBER; i++)
+
+	for (size_t i = 1; i < (TASK_NUMBER); i++)
 	{
-		priority_sort_array[i].priority = 99-i;
+		// priority_sort_array[i].priority = 99-(i<<);
+        priority_sort_array[i].priority = 98; //for middle priority.
 	}
 }
 
+void pinCPU(int cpu_number) {
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+
+    CPU_SET(cpu_number, &mask);
+
+    if(sched_setaffinity(0, sizeof(cpu_set_t), &mask) == -1) {
+        perror("sched_setaffinity");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void setSchedulingPolicy (int newPolicy, int priority)
+{
+    sched_param sched;
+    int oldPolicy;
+    if (pthread_getschedparam(pthread_self(), &oldPolicy, &sched)) {
+        perror("pthread_setschedparam");
+        exit(EXIT_FAILURE);
+    }
+    sched.sched_priority = priority;
+    if (pthread_setschedparam(pthread_self(), newPolicy, &sched)) {
+        perror("pthread_setschedparam");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void workload_1ms (void)
+{
+	int repeat = 625; // tune this for the right amount of workload
+	int x=0;
+	for (int i = 0; i <= repeat; i++)
+	{
+		// add some computation here (e.g., use sqrt() in cmath)
+		x = sqrt(2);
+	}
+}
 
 int main(void)
 {
     pinCPU(CPU_CORE);
     constexpr int tasknumber = TASK_NUMBER;
     pthread_t tau_threads[tasknumber];
-	
+    pthread_mutex_t mutex_section1 = PTHREAD_MUTEX_INITIALIZER;
+
     //tau parameter declaration
     tau_parameter tau_time[tasknumber]=
     {
         {WORKLOADTIME_TAU1,PERIODTIME_TAU1,DEFAULT_PRIORITY},
         {WORKLOADTIME_TAU2,PERIODTIME_TAU2,DEFAULT_PRIORITY},
-        {WORKLOADTIME_TAU3,PERIODTIME_TAU3,DEFAULT_PRIORITY}
+        {WORKLOADTIME_TAU3,PERIODTIME_TAU3,DEFAULT_PRIORITY},
+        {WORKLOADTIME_TAU4,PERIODTIME_TAU4,DEFAULT_PRIORITY},
+        {WORKLOADTIME_TAU5,PERIODTIME_TAU5,DEFAULT_PRIORITY},
+        {WORKLOADTIME_TAU6,PERIODTIME_TAU6,DEFAULT_PRIORITY},
+        {WORKLOADTIME_TAU7,PERIODTIME_TAU7,DEFAULT_PRIORITY},
+        {WORKLOADTIME_TAU8,PERIODTIME_TAU8,DEFAULT_PRIORITY},
     };    
 
 	//tau prioriry sort by rate_Monotonic 
@@ -117,15 +171,12 @@ int main(void)
 
   	for (size_t i = 0; i < TASK_NUMBER; ++i)
   	{
-  		if (pthread_create(&tau_threads[i], NULL, tau_process, (void *)&tau_time[i]) != 0)
-        {
-            fflush(stdout);
-  		    perror("pthread_create()");
-            exit(1);
-        }
-        
-
+  		pthread_create(&tau_threads[i], NULL, tau_process, (void *)&tau_time[i]);
+        fflush(stdout);
+        perror("pthread_create()");
+        exit(1);
   	}
+  
   	for (size_t i = 0; i < TASK_NUMBER; ++i)
   	{
     	if (pthread_join(tau_threads[i], NULL) != 0)
@@ -169,42 +220,6 @@ void do_wrap_up(int one_times, int another_times)
 }
 */
 
-void pinCPU(int cpu_number) {
-    cpu_set_t mask;
-    CPU_ZERO(&mask);
 
-    CPU_SET(cpu_number, &mask);
-
-    if(sched_setaffinity(0, sizeof(cpu_set_t), &mask) == -1) {
-        perror("sched_setaffinity");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void setSchedulingPolicy (int newPolicy, int priority)
-{
-    sched_param sched;
-    int oldPolicy;
-    if (pthread_getschedparam(pthread_self(), &oldPolicy, &sched)) {
-        perror("pthread_setschedparam");
-        exit(EXIT_FAILURE);
-    }
-    sched.sched_priority = priority;
-    if (pthread_setschedparam(pthread_self(), newPolicy, &sched)) {
-        perror("pthread_setschedparam");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void workload_1ms (void)
-{
-	int repeat = 625; // tune this for the right amount of workload
-	int x=0;
-	for (int i = 0; i <= repeat; i++)
-	{
-		// add some computation here (e.g., use sqrt() in cmath)
-		x = sqrt(2);
-	}
-}
 
 
