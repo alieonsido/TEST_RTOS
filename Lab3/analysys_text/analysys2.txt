@@ -1,0 +1,13 @@
+De-coupling 的設計中，一個 thread 要處理 message 和 priority_queue 的 scheduling，立其名為 thd_sch
+另一個則需要專心 Handling message, 名為 thd_hdl
+
+Pros:
+    de-coupling 的缺點是在小系統的時候效率會比 coupling 來的還差。
+    假設 publish / subscribe model, 扣除掉 process 本身的 period, 
+    我們可以知道單一一個 process 從 「publish 到 subscribe」 需要消耗的時間為: T_pub + (k_sub * T_sub) + (k_queue * T_queue) 
+    k_queue 定義為會跟 EDF, RM, FIFO 等 scheduling 的策略不同而改變的 factor.
+    k_sub 則定義為輸出 
+
+
+    而 coupling 針對時間的 T_pub + k*
+Cons:

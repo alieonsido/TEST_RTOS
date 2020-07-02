@@ -1,6 +1,12 @@
 # CSC9006 Real-Time Systems, Lab 3
 
-[TOC]
+## My Dir Reading dir
+
+- makeup_exp: as contents
+- plot_scripts: as contents
+- analysis_text:
+  - analysis1~4.txt
+  
 
 ## 1. Introduction
 

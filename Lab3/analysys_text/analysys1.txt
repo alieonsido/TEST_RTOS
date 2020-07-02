@@ -1,0 +1,12 @@
+關於 EDF (Earliest deadline first ) implement:
+    使用一個 priority queue, 每一個新增的 message 都會有一個可被使用者 / Publisher 所定義的 DeadLine, 
+    根據 DL 的長短決定 message 在 priority queue 要怎麼排列。
+    然後在 queue 的 process 中隨時跟 message 比照 DL 和現在的時間，快到 DL 的 process 優先處理掉。
+
+關於 RM (Rate Monotonic) 
+    一樣藉由 priority queue 做實作，但是 Publisher/使用者的定義的不再是 DL 而是作業週期，
+    換言之使用者不再能決定哪個 message 能優先被處理, 只能委由 priority queue 的 process 決定。
+    作業週期較短的優先被 prioriey queue 所處理。
+
+關於 FIFO (First In First Out)
+    先進去 priority queue 的 message 先進行處理, 無視 DL 跟 Period。
