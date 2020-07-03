@@ -1,13 +1,28 @@
-De-coupling 的設計中，一個 thread 要處理 message 和 priority_queue 的 scheduling，立其名為 thd_sch
-另一個則需要專心 Handling message, 名為 thd_hdl
+我想像的 De-coupling 的設計中，會有三個 thread：
+    一個 thread 要處理 message（在實際系統上代表進來的 thread） 在 priority_queue 的 scheduling ，立其名為 thd_scr
+    另一個則需要專心 Handling message 並加入 priority queue 的開頭，名為 thd_hdl
+    最後一個則是負責處理 subscribe, 也就是專心確認 priority_queue 的每個元素是否滿足 subscribe 的條件，名為 thd_sub
+
+假設 publish / subscribe model, 扣除掉 process 本身的 period, 
+我們可以知道單一一個 process 從 「publish 到 subscribe」 需要消耗的時間為: T_pub + (k_sub * T_sub) +  T_queue
+T_queue 是某個 scheduling 策略理想上你應該要花的 "avg time"
+T_pub, T_sub 則為 publish/subscribe 的時間。
+
+k_sub 則定義為 subscriber 的時變 factor。 
+而決定 de-coupling 以及 coupling 的時間差，便是在此因子上面的討論。
 
 Pros:
-    de-coupling 的缺點是在小系統的時候效率會比 coupling 來的還差。
-    假設 publish / subscribe model, 扣除掉 process 本身的 period, 
-    我們可以知道單一一個 process 從 「publish 到 subscribe」 需要消耗的時間為: T_pub + (k_sub * T_sub) + (k_queue * T_queue) 
-    k_queue 定義為會跟 EDF, RM, FIFO 等 scheduling 的策略不同而改變的 factor.
-    k_sub 則定義為輸出 
+    de-coupling 的優點是在 message 吞吐量較大的系統的時候，效率會比 coupling 來的更好。
+    
+    我們知道，由於 subscribe 是在每一次塞入 priority queue 的 loop 中，
+    因此對於 coupling 的系統來說，每個 loop 都會做一次 「根據 scheduling 策略來確認是否要提交 Priority queue 中的 message」 的指令，
+    這使得 k_sub 在 coupling 的時候會因為多次的 if-else check ，造成 delay 大幅增加。
+    而 T_queue 的時間也會因為「前一個狀態」被間接拉長。
 
+    而 de-coupling 因為 thd_hdl, thd_scr, thd_sub 在時序上是平行處理的關係，
+    因此不需要 「每一次 handling message, 都要跟著 thd_scr / thd_sub」 的行為。
+    可以使兩邊的速度達到接近理想的優化，換言之， k_sub 在進行計算的時候可以完全幾乎等價於1, 
+    並且同一個 T_pub 和 T_sub 能處理越多的 Process。
 
-    而 coupling 針對時間的 T_pub + k*
 Cons:
+    寫起來很麻煩，加上要非常小心 memory leak 的問題，必須保證你的操作都是維持 atomic 的特性。
